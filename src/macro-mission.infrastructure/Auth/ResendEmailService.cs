@@ -21,8 +21,12 @@ public sealed class ResendEmailService(IResend resend, ResendSettings settings) 
         await resend.EmailSendAsync(message, cancellationToken);
     }
 
-    private string BuildSubject(string subject) =>
-        settings.IsProduction ? subject : $"[TEST] {subject}";
+    private string BuildSubject(string subject)
+    {
+        string appPrefix = $"[{settings.AppName}]";
+        string testPrefix = settings.IsProduction ? string.Empty : "[TEST] ";
+        return $"{testPrefix}{appPrefix} {subject}";
+    }
 
     private static string BuildVerificationEmail(string token) =>
         $"""
