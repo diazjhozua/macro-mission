@@ -5,7 +5,6 @@ using MacroMission.Infrastructure.Persistence.Indexes;
 using MacroMission.Infrastructure.Persistence.Repositories;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Resend;
 
 namespace MacroMission.Infrastructure.DependencyInjection;
 
@@ -55,16 +54,12 @@ public static class InfrastructureServiceExtensions
 
     private static void AddEmail(IServiceCollection services, IConfiguration configuration)
     {
-        ResendSettings resendSettings = configuration
-            .GetSection(ResendSettings.SectionName)
-            .Get<ResendSettings>()
-            ?? throw new InvalidOperationException("Resend config section is missing.");
+        SmtpSettings smtpSettings = configuration
+            .GetSection(SmtpSettings.SectionName)
+            .Get<SmtpSettings>()
+            ?? throw new InvalidOperationException("Smtp config section is missing.");
 
-        services.AddSingleton(resendSettings);
-        services.AddHttpClient<ResendClient>();
-        services.Configure<ResendClientOptions>(options =>
-            options.ApiToken = resendSettings.ApiKey);
-        services.AddTransient<IResend, ResendClient>();
-        services.AddTransient<IEmailService, ResendEmailService>();
+        services.AddSingleton(smtpSettings);
+        services.AddTransient<IEmailService, SmtpEmailService>();
     }
 }
