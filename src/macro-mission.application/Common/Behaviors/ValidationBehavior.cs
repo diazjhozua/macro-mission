@@ -22,7 +22,7 @@ public sealed class ValidationBehavior<TRequest, TResponse>(
         if (!validators.Any())
             return await next(cancellationToken);
 
-        var errors = validators
+        List<Error> errors = validators
             .Select(v => v.Validate(request))
             .SelectMany(r => r.Errors)
             .Where(f => f is not null)
