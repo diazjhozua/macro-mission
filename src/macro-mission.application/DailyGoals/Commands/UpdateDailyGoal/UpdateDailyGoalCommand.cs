@@ -9,6 +9,7 @@ public sealed record UpdateDailyGoalCommand(
     ObjectId GoalId,
     ObjectId UserId,
     string Name,
+    bool IsActive,
     double Calories,
     double Protein,
     double Carbs,

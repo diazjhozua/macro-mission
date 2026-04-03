@@ -24,7 +24,12 @@ public sealed class UpdateDailyGoalCommandHandler(
         if (goal.UserId != command.UserId)
             return Error.Forbidden("DailyGoal.Forbidden", "You do not have access to this goal.");
 
+        // Deactivate all other goals before activating this one.
+        if (command.IsActive && !goal.IsActive)
+            await dailyGoalRepository.DeactivateAllByUserIdAsync(command.UserId, cancellationToken);
+
         goal.Name = command.Name;
+        goal.IsActive = command.IsActive;
         goal.Calories = command.Calories;
         goal.Protein = command.Protein;
         goal.Carbs = command.Carbs;
