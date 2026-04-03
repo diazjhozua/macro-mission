@@ -1,0 +1,6 @@
+@macro_mission.api_HostAddress = http://localhost:5043
+
+GET {{macro_mission.api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/macro-mission.api/macro-mission.api.csproj" />
+    <Project Path="src/macro-mission.application/macro-mission.application.csproj" />
+    <Project Path="src/macro-mission.contracts/macro-mission.contracts.csproj" />
+    <Project Path="src/macro-mission.domain/macro-mission.domain.csproj" />
+    <Project Path="src/macro-mission.infrastructure/macro-mission.infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/macro-mission.tests/macro-mission.tests.csproj" />
+  </Folder>
+</Solution>
