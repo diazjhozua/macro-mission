@@ -7,7 +7,7 @@
 .env
 
 # Real app config — contains secrets and environment-specific values, never commit
-appsettings.json
+appsettings.Development.json
 
 # User-specific files
 *.rsuser
