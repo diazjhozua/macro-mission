@@ -1,4 +1,5 @@
 using MacroMission.Application.Common.Interfaces;
+using MacroMission.Domain.DailyGoals;
 using MacroMission.Domain.Users;
 using MongoDB.Driver;
 
@@ -13,6 +14,7 @@ public static class MongoIndexInitializer
     public static async Task InitializeAsync(IMongoDbContext context)
     {
         await CreateUserIndexesAsync(context);
+        await CreateDailyGoalIndexesAsync(context);
     }
 
     private static async Task CreateUserIndexesAsync(IMongoDbContext context)
@@ -33,5 +35,27 @@ public static class MongoIndexInitializer
             new CreateIndexOptions { Name = "refreshTokens_token" });
 
         await users.Indexes.CreateManyAsync([uniqueEmail, refreshToken]);
+    }
+
+    private static async Task CreateDailyGoalIndexesAsync(IMongoDbContext context)
+    {
+        IMongoCollection<DailyGoal> goals = context.GetCollection<DailyGoal>("dailyGoals");
+
+        // Most queries filter by userId — covers GetAll and GetActive lookups.
+        IndexKeysDefinition<DailyGoal> userIdIndex = Builders<DailyGoal>.IndexKeys
+            .Ascending(g => g.UserId);
+        CreateIndexModel<DailyGoal> userId = new(
+            userIdIndex,
+            new CreateIndexOptions { Name = "dailyGoals_userId" });
+
+        // Compound index for the active goal lookup — hits on every auth-gated request.
+        IndexKeysDefinition<DailyGoal> userIdIsActiveIndex = Builders<DailyGoal>.IndexKeys
+            .Ascending(g => g.UserId)
+            .Ascending(g => g.IsActive);
+        CreateIndexModel<DailyGoal> userIdIsActive = new(
+            userIdIsActiveIndex,
+            new CreateIndexOptions { Name = "dailyGoals_userId_isActive" });
+
+        await goals.Indexes.CreateManyAsync([userId, userIdIsActive]);
     }
 }
