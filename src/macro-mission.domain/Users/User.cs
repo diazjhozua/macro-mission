@@ -7,6 +7,9 @@ public sealed class User : Entity
     // Normalized to lowercase before storage — unique index on this field.
     public string Email { get; set; } = string.Empty;
     public string PasswordHash { get; set; } = string.Empty;
+    public string FirstName { get; set; } = string.Empty;
+    public string LastName { get; set; } = string.Empty;
+    public string Nickname { get; set; } = string.Empty;
     public bool IsEmailVerified { get; set; }
     public string? EmailVerificationToken { get; set; }
     public DateTime? EmailVerificationTokenExpiresAt { get; set; }
