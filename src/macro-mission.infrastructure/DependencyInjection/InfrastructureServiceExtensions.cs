@@ -39,6 +39,7 @@ public static class InfrastructureServiceExtensions
         services.AddSingleton<IMongoDbContext, MongoDbContext>();
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IDailyGoalRepository, DailyGoalRepository>();
+        services.AddScoped<IFoodRepository, FoodRepository>();
     }
 
     private static void AddAuth(IServiceCollection services, IConfiguration configuration)

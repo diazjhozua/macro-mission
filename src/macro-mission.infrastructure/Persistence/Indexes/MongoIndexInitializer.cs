@@ -1,5 +1,6 @@
 using MacroMission.Application.Common.Interfaces;
 using MacroMission.Domain.DailyGoals;
+using MacroMission.Domain.Foods;
 using MacroMission.Domain.Users;
 using MongoDB.Driver;
 
@@ -15,6 +16,7 @@ public static class MongoIndexInitializer
     {
         await CreateUserIndexesAsync(context);
         await CreateDailyGoalIndexesAsync(context);
+        await CreateFoodIndexesAsync(context);
     }
 
     private static async Task CreateUserIndexesAsync(IMongoDbContext context)
@@ -57,5 +59,20 @@ public static class MongoIndexInitializer
             new CreateIndexOptions { Name = "dailyGoals_userId_isActive" });
 
         await goals.Indexes.CreateManyAsync([userId, userIdIsActive]);
+    }
+
+    private static async Task CreateFoodIndexesAsync(IMongoDbContext context)
+    {
+        IMongoCollection<Food> foods = context.GetCollection<Food>("foods");
+
+        // Compound index covers the search query — filters by ownerId then sorts by name.
+        IndexKeysDefinition<Food> ownerNameIndex = Builders<Food>.IndexKeys
+            .Ascending(f => f.OwnerId)
+            .Ascending(f => f.Name);
+        CreateIndexModel<Food> ownerName = new(
+            ownerNameIndex,
+            new CreateIndexOptions { Name = "foods_ownerId_name" });
+
+        await foods.Indexes.CreateManyAsync([ownerName]);
     }
 }
