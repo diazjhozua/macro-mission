@@ -1,28 +1,28 @@
-using ErrorOr;
 using MacroMission.Application.Common.Interfaces;
+using MacroMission.Application.Common.Messaging;
 using MacroMission.Application.DailyGoals.Commands.CreateDailyGoal;
 using MacroMission.Application.DailyGoals.Results;
+using MacroMission.Domain.Common;
 using MacroMission.Domain.DailyGoals;
-using MediatR;
 
 namespace MacroMission.Application.DailyGoals.Queries.GetDailyGoalById;
 
-public sealed class GetDailyGoalByIdQueryHandler(
+internal sealed class GetDailyGoalByIdQueryHandler(
     IDailyGoalRepository dailyGoalRepository)
-    : IRequestHandler<GetDailyGoalByIdQuery, ErrorOr<DailyGoalResult>>
+    : IQueryHandler<GetDailyGoalByIdQuery, DailyGoalResult>
 {
-    public async Task<ErrorOr<DailyGoalResult>> Handle(
+    public async Task<Result<DailyGoalResult>> Handle(
         GetDailyGoalByIdQuery query,
         CancellationToken cancellationToken)
     {
         DailyGoal? goal = await dailyGoalRepository.GetByIdAsync(query.GoalId, cancellationToken);
 
         if (goal is null)
-            return Error.NotFound("DailyGoal.NotFound", "Daily goal not found.");
+            return Result<DailyGoalResult>.Failure(Error.NotFound("DailyGoal.NotFound", "Daily goal not found."));
 
         if (goal.UserId != query.UserId)
-            return Error.Forbidden("DailyGoal.Forbidden", "You do not have access to this goal.");
+            return Result<DailyGoalResult>.Failure(Error.Forbidden("DailyGoal.Forbidden", "You do not have access to this goal."));
 
-        return CreateDailyGoalCommandHandler.ToResult(goal);
+        return Result<DailyGoalResult>.Success(CreateDailyGoalCommandHandler.ToResult(goal));
     }
 }

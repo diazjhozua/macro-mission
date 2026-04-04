@@ -1,16 +1,16 @@
-using ErrorOr;
 using MacroMission.Application.Common.Interfaces;
+using MacroMission.Application.Common.Messaging;
 using MacroMission.Application.DailyGoals.Results;
+using MacroMission.Domain.Common;
 using MacroMission.Domain.DailyGoals;
-using MediatR;
 
 namespace MacroMission.Application.DailyGoals.Commands.CreateDailyGoal;
 
-public sealed class CreateDailyGoalCommandHandler(
+internal sealed class CreateDailyGoalCommandHandler(
     IDailyGoalRepository dailyGoalRepository)
-    : IRequestHandler<CreateDailyGoalCommand, ErrorOr<DailyGoalResult>>
+    : ICommandHandler<CreateDailyGoalCommand, DailyGoalResult>
 {
-    public async Task<ErrorOr<DailyGoalResult>> Handle(
+    public async Task<Result<DailyGoalResult>> Handle(
         CreateDailyGoalCommand command,
         CancellationToken cancellationToken)
     {
@@ -32,7 +32,7 @@ public sealed class CreateDailyGoalCommandHandler(
 
         await dailyGoalRepository.CreateAsync(goal, cancellationToken);
 
-        return ToResult(goal);
+        return Result<DailyGoalResult>.Success(ToResult(goal));
     }
 
     internal static DailyGoalResult ToResult(DailyGoal goal) => new(

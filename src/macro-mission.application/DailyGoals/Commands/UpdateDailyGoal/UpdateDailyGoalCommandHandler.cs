@@ -1,28 +1,27 @@
-using ErrorOr;
 using MacroMission.Application.Common.Interfaces;
+using MacroMission.Application.Common.Messaging;
 using MacroMission.Application.DailyGoals.Commands.CreateDailyGoal;
 using MacroMission.Application.DailyGoals.Results;
+using MacroMission.Domain.Common;
 using MacroMission.Domain.DailyGoals;
-using MediatR;
 
 namespace MacroMission.Application.DailyGoals.Commands.UpdateDailyGoal;
 
-public sealed class UpdateDailyGoalCommandHandler(
+internal sealed class UpdateDailyGoalCommandHandler(
     IDailyGoalRepository dailyGoalRepository)
-    : IRequestHandler<UpdateDailyGoalCommand, ErrorOr<DailyGoalResult>>
+    : ICommandHandler<UpdateDailyGoalCommand, DailyGoalResult>
 {
-    public async Task<ErrorOr<DailyGoalResult>> Handle(
+    public async Task<Result<DailyGoalResult>> Handle(
         UpdateDailyGoalCommand command,
         CancellationToken cancellationToken)
     {
         DailyGoal? goal = await dailyGoalRepository.GetByIdAsync(command.GoalId, cancellationToken);
 
         if (goal is null)
-            return Error.NotFound("DailyGoal.NotFound", "Daily goal not found.");
+            return Result<DailyGoalResult>.Failure(Error.NotFound("DailyGoal.NotFound", "Daily goal not found."));
 
-        // Prevent users from modifying another user's goals.
         if (goal.UserId != command.UserId)
-            return Error.Forbidden("DailyGoal.Forbidden", "You do not have access to this goal.");
+            return Result<DailyGoalResult>.Failure(Error.Forbidden("DailyGoal.Forbidden", "You do not have access to this goal."));
 
         // Deactivate all other goals before activating this one.
         if (command.IsActive && !goal.IsActive)
@@ -39,6 +38,6 @@ public sealed class UpdateDailyGoalCommandHandler(
 
         await dailyGoalRepository.UpdateAsync(goal, cancellationToken);
 
-        return CreateDailyGoalCommandHandler.ToResult(goal);
+        return Result<DailyGoalResult>.Success(CreateDailyGoalCommandHandler.ToResult(goal));
     }
 }
