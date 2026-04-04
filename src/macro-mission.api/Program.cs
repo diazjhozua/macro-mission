@@ -57,7 +57,7 @@ app.UseMiddleware<ExceptionHandlingMiddleware>();
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
-    app.MapScalarApiReference();
+    app.MapScalarApiReference(options => options.Title = "Macro Mission");
 }
 
 app.UseHttpsRedirection();
