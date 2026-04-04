@@ -1,10 +1,12 @@
 using System.Text;
 using MacroMission.Api.Middleware;
+using MacroMission.Api.OpenApi;
 using MacroMission.Application.DependencyInjection;
 using MacroMission.Infrastructure.Auth;
 using MacroMission.Infrastructure.DependencyInjection;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using Scalar.AspNetCore;
 using InfrastructureServiceExtensions = MacroMission.Infrastructure.DependencyInjection.InfrastructureServiceExtensions;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
@@ -22,6 +24,8 @@ builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
+        // Disable default claim mapping so "sub" stays as "sub", not ClaimTypes.NameIdentifier.
+        options.MapInboundClaims = false;
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,
@@ -38,8 +42,10 @@ builder.Services
 builder.Services.AddControllers();
 builder.Services.AddHealthChecks();
 
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddOpenApi(options =>
+{
+    options.AddDocumentTransformer<BearerSecuritySchemeTransformer>();
+});
 
 WebApplication app = builder.Build();
 
@@ -50,8 +56,8 @@ app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 if (app.Environment.IsDevelopment())
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
+    app.MapOpenApi();
+    app.MapScalarApiReference();
 }
 
 app.UseHttpsRedirection();
