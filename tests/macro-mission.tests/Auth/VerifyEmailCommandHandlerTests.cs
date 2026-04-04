@@ -1,7 +1,7 @@
-using ErrorOr;
 using FluentAssertions;
 using MacroMission.Application.Auth.Commands.VerifyEmail;
 using MacroMission.Application.Common.Interfaces;
+using MacroMission.Domain.Common;
 using MacroMission.Domain.Users;
 using NSubstitute;
 
@@ -31,11 +31,11 @@ public sealed class VerifyEmailCommandHandlerTests
         _userRepository.GetByEmailVerificationTokenAsync("valid-token").Returns(user);
 
         // Act
-        ErrorOr<Success> result = await _handler.Handle(
+        Result result = await _handler.Handle(
             new VerifyEmailCommand("valid-token"), CancellationToken.None);
 
         // Assert
-        result.IsError.Should().BeFalse();
+        result.IsSuccess.Should().BeTrue();
         user.IsEmailVerified.Should().BeTrue();
         user.EmailVerificationToken.Should().BeNull();
         user.EmailVerificationTokenExpiresAt.Should().BeNull();
@@ -49,12 +49,12 @@ public sealed class VerifyEmailCommandHandlerTests
         _userRepository.GetByEmailVerificationTokenAsync("bad-token").Returns((User?)null);
 
         // Act
-        ErrorOr<Success> result = await _handler.Handle(
+        Result result = await _handler.Handle(
             new VerifyEmailCommand("bad-token"), CancellationToken.None);
 
         // Assert
-        result.IsError.Should().BeTrue();
-        result.FirstError.Type.Should().Be(ErrorType.NotFound);
+        result.IsFailure.Should().BeTrue();
+        result.Error.Type.Should().Be(ErrorType.NotFound);
     }
 
     [Fact]
@@ -65,18 +65,18 @@ public sealed class VerifyEmailCommandHandlerTests
         {
             Email = "test@example.com",
             EmailVerificationToken = "expired-token",
-            EmailVerificationTokenExpiresAt = DateTime.UtcNow.AddHours(-1), // already expired
+            EmailVerificationTokenExpiresAt = DateTime.UtcNow.AddHours(-1),
             IsEmailVerified = false
         };
         _userRepository.GetByEmailVerificationTokenAsync("expired-token").Returns(user);
 
         // Act
-        ErrorOr<Success> result = await _handler.Handle(
+        Result result = await _handler.Handle(
             new VerifyEmailCommand("expired-token"), CancellationToken.None);
 
         // Assert
-        result.IsError.Should().BeTrue();
-        result.FirstError.Type.Should().Be(ErrorType.Validation);
+        result.IsFailure.Should().BeTrue();
+        result.Error.Type.Should().Be(ErrorType.Validation);
     }
 
     [Fact]
@@ -93,11 +93,11 @@ public sealed class VerifyEmailCommandHandlerTests
         _userRepository.GetByEmailVerificationTokenAsync("some-token").Returns(user);
 
         // Act
-        ErrorOr<Success> result = await _handler.Handle(
+        Result result = await _handler.Handle(
             new VerifyEmailCommand("some-token"), CancellationToken.None);
 
         // Assert
-        result.IsError.Should().BeTrue();
-        result.FirstError.Type.Should().Be(ErrorType.Conflict);
+        result.IsFailure.Should().BeTrue();
+        result.Error.Type.Should().Be(ErrorType.Conflict);
     }
 }

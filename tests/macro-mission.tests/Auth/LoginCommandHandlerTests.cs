@@ -1,8 +1,8 @@
-using ErrorOr;
 using FluentAssertions;
 using MacroMission.Application.Auth.Commands.Login;
 using MacroMission.Application.Auth.Results;
 using MacroMission.Application.Common.Interfaces;
+using MacroMission.Domain.Common;
 using MacroMission.Domain.Users;
 using NSubstitute;
 
@@ -30,7 +30,6 @@ public sealed class LoginCommandHandlerTests
             PasswordHash = "hashed-password",
             IsEmailVerified = true
         };
-
         _userRepository.GetByEmailAsync("test@example.com").Returns(user);
         _passwordHasher.Verify("Password1", "hashed-password").Returns(true);
         _tokenService.GenerateAccessToken(user).Returns("access-token");
@@ -38,11 +37,11 @@ public sealed class LoginCommandHandlerTests
         _tokenService.HashRefreshToken("raw-refresh-token").Returns("hashed-refresh-token");
 
         // Act
-        ErrorOr<AuthResult> result = await _handler.Handle(
+        Result<AuthResult> result = await _handler.Handle(
             new LoginCommand("test@example.com", "Password1"), CancellationToken.None);
 
         // Assert
-        result.IsError.Should().BeFalse();
+        result.IsSuccess.Should().BeTrue();
         result.Value.AccessToken.Should().Be("access-token");
         result.Value.RefreshToken.Should().Be("raw-refresh-token");
     }
@@ -57,30 +56,29 @@ public sealed class LoginCommandHandlerTests
             PasswordHash = "hashed-password",
             IsEmailVerified = true
         };
-
         _userRepository.GetByEmailAsync("test@example.com").Returns(user);
         _passwordHasher.Verify("wrong-password", "hashed-password").Returns(false);
 
         // Act
-        ErrorOr<AuthResult> result = await _handler.Handle(
+        Result<AuthResult> result = await _handler.Handle(
             new LoginCommand("test@example.com", "wrong-password"), CancellationToken.None);
 
         // Assert
-        result.IsError.Should().BeTrue();
-        result.FirstError.Type.Should().Be(ErrorType.Unauthorized);
+        result.IsFailure.Should().BeTrue();
+        result.Error.Type.Should().Be(ErrorType.Unauthorized);
     }
 
     [Fact]
     public async Task Handle_WithUnknownEmail_ReturnsUnauthorizedError()
     {
-        // Generic error regardless of whether email exists — avoids user enumeration.
+        // Generic error regardless of whether the email exists — avoids user enumeration.
         _userRepository.GetByEmailAsync(Arg.Any<string>()).Returns((User?)null);
 
-        ErrorOr<AuthResult> result = await _handler.Handle(
+        Result<AuthResult> result = await _handler.Handle(
             new LoginCommand("nobody@example.com", "Password1"), CancellationToken.None);
 
-        result.IsError.Should().BeTrue();
-        result.FirstError.Type.Should().Be(ErrorType.Unauthorized);
+        result.IsFailure.Should().BeTrue();
+        result.Error.Type.Should().Be(ErrorType.Unauthorized);
     }
 
     [Fact]
@@ -93,16 +91,15 @@ public sealed class LoginCommandHandlerTests
             PasswordHash = "hashed-password",
             IsEmailVerified = false
         };
-
         _userRepository.GetByEmailAsync("test@example.com").Returns(user);
         _passwordHasher.Verify("Password1", "hashed-password").Returns(true);
 
         // Act
-        ErrorOr<AuthResult> result = await _handler.Handle(
+        Result<AuthResult> result = await _handler.Handle(
             new LoginCommand("test@example.com", "Password1"), CancellationToken.None);
 
         // Assert
-        result.IsError.Should().BeTrue();
-        result.FirstError.Type.Should().Be(ErrorType.Forbidden);
+        result.IsFailure.Should().BeTrue();
+        result.Error.Type.Should().Be(ErrorType.Forbidden);
     }
 }

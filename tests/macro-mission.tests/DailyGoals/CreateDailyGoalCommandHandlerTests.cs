@@ -1,8 +1,8 @@
-using ErrorOr;
 using FluentAssertions;
 using MacroMission.Application.Common.Interfaces;
 using MacroMission.Application.DailyGoals.Commands.CreateDailyGoal;
 using MacroMission.Application.DailyGoals.Results;
+using MacroMission.Domain.Common;
 using MacroMission.Domain.DailyGoals;
 using MongoDB.Bson;
 using NSubstitute;
@@ -25,14 +25,13 @@ public sealed class CreateDailyGoalCommandHandlerTests
     {
         // Arrange
         _repository.GetActiveByUserIdAsync(_userId).Returns((DailyGoal?)null);
-
         CreateDailyGoalCommand command = new(_userId, "Summer Cut", 1800, 160, 150, 55, 30);
 
         // Act
-        ErrorOr<DailyGoalResult> result = await _handler.Handle(command, CancellationToken.None);
+        Result<DailyGoalResult> result = await _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        result.IsError.Should().BeFalse();
+        result.IsSuccess.Should().BeTrue();
         result.Value.IsActive.Should().BeTrue();
         result.Value.Name.Should().Be("Summer Cut");
     }
@@ -42,14 +41,13 @@ public sealed class CreateDailyGoalCommandHandlerTests
     {
         // Arrange
         _repository.GetActiveByUserIdAsync(_userId).Returns(new DailyGoal { IsActive = true });
-
         CreateDailyGoalCommand command = new(_userId, "Winter Bulk", 2800, 180, 300, 90, 25);
 
         // Act
-        ErrorOr<DailyGoalResult> result = await _handler.Handle(command, CancellationToken.None);
+        Result<DailyGoalResult> result = await _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        result.IsError.Should().BeFalse();
+        result.IsSuccess.Should().BeTrue();
         result.Value.IsActive.Should().BeFalse();
     }
 

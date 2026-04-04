@@ -1,8 +1,8 @@
-using ErrorOr;
 using FluentAssertions;
 using MacroMission.Application.Common.Interfaces;
 using MacroMission.Application.DailyGoals.Commands.UpdateDailyGoal;
 using MacroMission.Application.DailyGoals.Results;
+using MacroMission.Domain.Common;
 using MacroMission.Domain.DailyGoals;
 using MongoDB.Bson;
 using NSubstitute;
@@ -26,14 +26,13 @@ public sealed class UpdateDailyGoalCommandHandlerTests
         // Arrange
         DailyGoal goal = new() { UserId = _userId, Name = "Old Name", IsActive = false };
         _repository.GetByIdAsync(goal.Id).Returns(goal);
-
         UpdateDailyGoalCommand command = new(goal.Id, _userId, "New Name", false, 2000, 150, 200, 65, 30);
 
         // Act
-        ErrorOr<DailyGoalResult> result = await _handler.Handle(command, CancellationToken.None);
+        Result<DailyGoalResult> result = await _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        result.IsError.Should().BeFalse();
+        result.IsSuccess.Should().BeTrue();
         result.Value.Name.Should().Be("New Name");
         result.Value.Calories.Should().Be(2000);
     }
@@ -44,7 +43,6 @@ public sealed class UpdateDailyGoalCommandHandlerTests
         // Arrange
         DailyGoal goal = new() { UserId = _userId, IsActive = false };
         _repository.GetByIdAsync(goal.Id).Returns(goal);
-
         UpdateDailyGoalCommand command = new(goal.Id, _userId, "Bulk", true, 2800, 180, 300, 90, 25);
 
         // Act
@@ -62,31 +60,29 @@ public sealed class UpdateDailyGoalCommandHandlerTests
     {
         // Arrange
         _repository.GetByIdAsync(Arg.Any<ObjectId>()).Returns((DailyGoal?)null);
-
         UpdateDailyGoalCommand command = new(ObjectId.GenerateNewId(), _userId, "Name", false, 2000, 150, 200, 65, 30);
 
         // Act
-        ErrorOr<DailyGoalResult> result = await _handler.Handle(command, CancellationToken.None);
+        Result<DailyGoalResult> result = await _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        result.IsError.Should().BeTrue();
-        result.FirstError.Type.Should().Be(ErrorType.NotFound);
+        result.IsFailure.Should().BeTrue();
+        result.Error.Type.Should().Be(ErrorType.NotFound);
     }
 
     [Fact]
     public async Task Handle_WhenGoalBelongsToDifferentUser_ReturnsForbiddenError()
     {
         // Arrange
-        DailyGoal goal = new() { UserId = ObjectId.GenerateNewId() }; // different owner
+        DailyGoal goal = new() { UserId = ObjectId.GenerateNewId() };
         _repository.GetByIdAsync(goal.Id).Returns(goal);
-
         UpdateDailyGoalCommand command = new(goal.Id, _userId, "Name", false, 2000, 150, 200, 65, 30);
 
         // Act
-        ErrorOr<DailyGoalResult> result = await _handler.Handle(command, CancellationToken.None);
+        Result<DailyGoalResult> result = await _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        result.IsError.Should().BeTrue();
-        result.FirstError.Type.Should().Be(ErrorType.Forbidden);
+        result.IsFailure.Should().BeTrue();
+        result.Error.Type.Should().Be(ErrorType.Forbidden);
     }
 }
