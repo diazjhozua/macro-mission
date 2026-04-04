@@ -1,6 +1,7 @@
 using ErrorOr;
 using MacroMission.Api.Extensions;
 using MacroMission.Application.DailyGoals.Commands.CreateDailyGoal;
+using MacroMission.Application.DailyGoals.Commands.DeleteDailyGoal;
 using MacroMission.Application.DailyGoals.Commands.UpdateDailyGoal;
 using MacroMission.Application.DailyGoals.Queries.GetAllDailyGoals;
 using MacroMission.Application.DailyGoals.Queries.GetDailyGoalById;
@@ -103,6 +104,23 @@ public sealed class DailyGoalsController(ISender mediator) : ApiController
         return result.Match(
             goal => Ok(MapToResponse(goal)),
             Problem);
+    }
+
+    /// <summary>Delete a daily goal by ID.</summary>
+    [HttpDelete("{id}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> Delete(string id, CancellationToken cancellationToken)
+    {
+        if (!ObjectId.TryParse(id, out ObjectId goalId))
+            return BadRequest(new { message = "Invalid goal ID format." });
+
+        DeleteDailyGoalCommand command = new(goalId, User.GetUserId());
+
+        ErrorOr<Deleted> result = await mediator.Send(command, cancellationToken);
+
+        return result.Match(_ => NoContent(), Problem);
     }
 
     private static DailyGoalResponse MapToResponse(DailyGoalResult result) => new(

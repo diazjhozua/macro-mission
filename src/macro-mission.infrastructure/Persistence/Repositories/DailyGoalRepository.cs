@@ -42,6 +42,12 @@ public sealed class DailyGoalRepository(IMongoDbContext context) : IDailyGoalRep
         await _goals.ReplaceOneAsync(filter, goal, cancellationToken: cancellationToken);
     }
 
+    public async Task DeleteAsync(ObjectId id, CancellationToken cancellationToken = default)
+    {
+        FilterDefinition<DailyGoal> filter = Builders<DailyGoal>.Filter.Eq(g => g.Id, id);
+        await _goals.DeleteOneAsync(filter, cancellationToken);
+    }
+
     public async Task DeactivateAllByUserIdAsync(ObjectId userId, CancellationToken cancellationToken = default)
     {
         FilterDefinition<DailyGoal> filter = Builders<DailyGoal>.Filter.Eq(g => g.UserId, userId);

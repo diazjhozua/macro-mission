@@ -11,4 +11,5 @@ public interface IDailyGoalRepository
     Task CreateAsync(DailyGoal goal, CancellationToken cancellationToken = default);
     Task UpdateAsync(DailyGoal goal, CancellationToken cancellationToken = default);
     Task DeactivateAllByUserIdAsync(ObjectId userId, CancellationToken cancellationToken = default);
+    Task DeleteAsync(ObjectId id, CancellationToken cancellationToken = default);
 }
