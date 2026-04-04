@@ -1,4 +1,4 @@
-using ErrorOr;
+using MacroMission.Domain.Common;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 
@@ -8,20 +8,11 @@ namespace MacroMission.Api.Controllers;
 [Route("api/v1/[controller]")]
 public abstract class ApiController : ControllerBase
 {
-    protected IActionResult Problem(List<Error> errors)
+    protected IActionResult Problem(Error error)
     {
-        if (errors.Count == 0)
-            return Problem();
+        if (error is ValidationError validationError)
+            return ValidationProblem(validationError);
 
-        // All validation errors → 400 with each error listed.
-        if (errors.All(e => e.Type == ErrorType.Validation))
-            return ValidationProblem(errors);
-
-        return Problem(errors[0]);
-    }
-
-    private IActionResult Problem(Error error)
-    {
         int statusCode = error.Type switch
         {
             ErrorType.NotFound => StatusCodes.Status404NotFound,
@@ -35,10 +26,10 @@ public abstract class ApiController : ControllerBase
         return Problem(statusCode: statusCode, title: error.Description);
     }
 
-    private IActionResult ValidationProblem(List<Error> errors)
+    private IActionResult ValidationProblem(ValidationError validationError)
     {
         ModelStateDictionary modelState = new();
-        foreach (Error error in errors)
+        foreach (Error error in validationError.Errors)
             modelState.AddModelError(error.Code, error.Description);
 
         return ValidationProblem(modelState);

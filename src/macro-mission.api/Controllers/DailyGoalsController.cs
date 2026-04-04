@@ -1,5 +1,5 @@
-using ErrorOr;
 using MacroMission.Api.Extensions;
+using MacroMission.Application.Common.Messaging;
 using MacroMission.Application.DailyGoals.Commands.CreateDailyGoal;
 using MacroMission.Application.DailyGoals.Commands.DeleteDailyGoal;
 using MacroMission.Application.DailyGoals.Commands.UpdateDailyGoal;
@@ -7,7 +7,7 @@ using MacroMission.Application.DailyGoals.Queries.GetAllDailyGoals;
 using MacroMission.Application.DailyGoals.Queries.GetDailyGoalById;
 using MacroMission.Application.DailyGoals.Results;
 using MacroMission.Contracts.DailyGoals;
-using MediatR;
+using MacroMission.Domain.Common;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MongoDB.Bson;
@@ -15,7 +15,12 @@ using MongoDB.Bson;
 namespace MacroMission.Api.Controllers;
 
 [Authorize]
-public sealed class DailyGoalsController(ISender mediator) : ApiController
+public sealed class DailyGoalsController(
+    ICommandHandler<CreateDailyGoalCommand, DailyGoalResult> createHandler,
+    ICommandHandler<UpdateDailyGoalCommand, DailyGoalResult> updateHandler,
+    ICommandHandler<DeleteDailyGoalCommand> deleteHandler,
+    IQueryHandler<GetAllDailyGoalsQuery, List<DailyGoalResult>> getAllHandler,
+    IQueryHandler<GetDailyGoalByIdQuery, DailyGoalResult> getByIdHandler) : ApiController
 {
     /// <summary>Create a new daily goal for the authenticated user.</summary>
     [HttpPost]
@@ -34,7 +39,7 @@ public sealed class DailyGoalsController(ISender mediator) : ApiController
             request.Fat,
             request.Fiber);
 
-        ErrorOr<DailyGoalResult> result = await mediator.Send(command, cancellationToken);
+        Result<DailyGoalResult> result = await createHandler.Handle(command, cancellationToken);
 
         return result.Match(
             goal => CreatedAtAction(nameof(GetById), new { id = goal.Id }, MapToResponse(goal)),
@@ -46,9 +51,8 @@ public sealed class DailyGoalsController(ISender mediator) : ApiController
     [ProducesResponseType(typeof(List<DailyGoalResponse>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
     {
-        GetAllDailyGoalsQuery query = new(User.GetUserId());
-
-        ErrorOr<List<DailyGoalResult>> result = await mediator.Send(query, cancellationToken);
+        Result<List<DailyGoalResult>> result = await getAllHandler.Handle(
+            new GetAllDailyGoalsQuery(User.GetUserId()), cancellationToken);
 
         return result.Match(
             goals => Ok(goals.Select(MapToResponse)),
@@ -65,9 +69,8 @@ public sealed class DailyGoalsController(ISender mediator) : ApiController
         if (!ObjectId.TryParse(id, out ObjectId goalId))
             return BadRequest(new { message = "Invalid goal ID format." });
 
-        GetDailyGoalByIdQuery query = new(goalId, User.GetUserId());
-
-        ErrorOr<DailyGoalResult> result = await mediator.Send(query, cancellationToken);
+        Result<DailyGoalResult> result = await getByIdHandler.Handle(
+            new GetDailyGoalByIdQuery(goalId, User.GetUserId()), cancellationToken);
 
         return result.Match(
             goal => Ok(MapToResponse(goal)),
@@ -99,7 +102,7 @@ public sealed class DailyGoalsController(ISender mediator) : ApiController
             request.Fat,
             request.Fiber);
 
-        ErrorOr<DailyGoalResult> result = await mediator.Send(command, cancellationToken);
+        Result<DailyGoalResult> result = await updateHandler.Handle(command, cancellationToken);
 
         return result.Match(
             goal => Ok(MapToResponse(goal)),
@@ -116,11 +119,12 @@ public sealed class DailyGoalsController(ISender mediator) : ApiController
         if (!ObjectId.TryParse(id, out ObjectId goalId))
             return BadRequest(new { message = "Invalid goal ID format." });
 
-        DeleteDailyGoalCommand command = new(goalId, User.GetUserId());
+        Result result = await deleteHandler.Handle(
+            new DeleteDailyGoalCommand(goalId, User.GetUserId()), cancellationToken);
 
-        ErrorOr<Deleted> result = await mediator.Send(command, cancellationToken);
-
-        return result.Match(_ => NoContent(), Problem);
+        return result.Match(
+            () => NoContent(),
+            Problem);
     }
 
     private static DailyGoalResponse MapToResponse(DailyGoalResult result) => new(

@@ -1,16 +1,20 @@
-using ErrorOr;
 using MacroMission.Application.Auth.Commands.Login;
 using MacroMission.Application.Auth.Commands.RefreshToken;
 using MacroMission.Application.Auth.Commands.Register;
 using MacroMission.Application.Auth.Commands.VerifyEmail;
 using MacroMission.Application.Auth.Results;
+using MacroMission.Application.Common.Messaging;
 using MacroMission.Contracts.Auth;
-using MediatR;
+using MacroMission.Domain.Common;
 using Microsoft.AspNetCore.Mvc;
 
 namespace MacroMission.Api.Controllers;
 
-public sealed class AuthController(ISender mediator) : ApiController
+public sealed class AuthController(
+    ICommandHandler<RegisterCommand> registerHandler,
+    ICommandHandler<VerifyEmailCommand> verifyEmailHandler,
+    ICommandHandler<LoginCommand, AuthResult> loginHandler,
+    ICommandHandler<RefreshTokenCommand, AuthResult> refreshTokenHandler) : ApiController
 {
     /// <summary>Register a new account. A verification email will be sent.</summary>
     [HttpPost("register")]
@@ -28,10 +32,10 @@ public sealed class AuthController(ISender mediator) : ApiController
             request.LastName,
             request.Nickname);
 
-        ErrorOr<Success> result = await mediator.Send(command, cancellationToken);
+        Result result = await registerHandler.Handle(command, cancellationToken);
 
         return result.Match(
-            _ => Ok(new { message = "Registration successful. Please check your email to verify your account." }),
+            () => Ok(new { message = "Registration successful. Please check your email to verify your account." }),
             Problem);
     }
 
@@ -44,12 +48,11 @@ public sealed class AuthController(ISender mediator) : ApiController
         VerifyEmailRequest request,
         CancellationToken cancellationToken)
     {
-        VerifyEmailCommand command = new(request.Token);
-
-        ErrorOr<Success> result = await mediator.Send(command, cancellationToken);
+        Result result = await verifyEmailHandler.Handle(
+            new VerifyEmailCommand(request.Token), cancellationToken);
 
         return result.Match(
-            _ => Ok(new { message = "Email verified successfully." }),
+            () => Ok(new { message = "Email verified successfully." }),
             Problem);
     }
 
@@ -62,9 +65,8 @@ public sealed class AuthController(ISender mediator) : ApiController
         LoginRequest request,
         CancellationToken cancellationToken)
     {
-        LoginCommand command = new(request.Email, request.Password);
-
-        ErrorOr<AuthResult> result = await mediator.Send(command, cancellationToken);
+        Result<AuthResult> result = await loginHandler.Handle(
+            new LoginCommand(request.Email, request.Password), cancellationToken);
 
         return result.Match(
             authResult => Ok(MapToAuthResponse(authResult)),
@@ -79,9 +81,8 @@ public sealed class AuthController(ISender mediator) : ApiController
         RefreshTokenRequest request,
         CancellationToken cancellationToken)
     {
-        RefreshTokenCommand command = new(request.RefreshToken);
-
-        ErrorOr<AuthResult> result = await mediator.Send(command, cancellationToken);
+        Result<AuthResult> result = await refreshTokenHandler.Handle(
+            new RefreshTokenCommand(request.RefreshToken), cancellationToken);
 
         return result.Match(
             authResult => Ok(MapToAuthResponse(authResult)),
