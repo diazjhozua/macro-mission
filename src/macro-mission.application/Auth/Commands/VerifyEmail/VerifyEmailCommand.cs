@@ -1,6 +1,5 @@
-using ErrorOr;
-using MediatR;
+using MacroMission.Application.Common.Messaging;
 
 namespace MacroMission.Application.Auth.Commands.VerifyEmail;
 
-public sealed record VerifyEmailCommand(string Token) : IRequest<ErrorOr<Success>>;
+public sealed record VerifyEmailCommand(string Token) : ICommand;

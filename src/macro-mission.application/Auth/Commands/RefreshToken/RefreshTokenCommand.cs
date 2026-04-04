@@ -1,7 +1,6 @@
-using ErrorOr;
 using MacroMission.Application.Auth.Results;
-using MediatR;
+using MacroMission.Application.Common.Messaging;
 
 namespace MacroMission.Application.Auth.Commands.RefreshToken;
 
-public sealed record RefreshTokenCommand(string RefreshToken) : IRequest<ErrorOr<AuthResult>>;
+public sealed record RefreshTokenCommand(string RefreshToken) : ICommand<AuthResult>;
