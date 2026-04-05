@@ -1,6 +1,7 @@
 using MacroMission.Application.Common.Interfaces;
 using MacroMission.Domain.DailyGoals;
 using MacroMission.Domain.Foods;
+using MacroMission.Domain.Meals;
 using MacroMission.Domain.Users;
 using MongoDB.Driver;
 
@@ -17,6 +18,7 @@ public static class MongoIndexInitializer
         await CreateUserIndexesAsync(context);
         await CreateDailyGoalIndexesAsync(context);
         await CreateFoodIndexesAsync(context);
+        await CreateMealIndexesAsync(context);
     }
 
     private static async Task CreateUserIndexesAsync(IMongoDbContext context)
@@ -74,5 +76,20 @@ public static class MongoIndexInitializer
             new CreateIndexOptions { Name = "foods_ownerId_name" });
 
         await foods.Indexes.CreateManyAsync([ownerName]);
+    }
+
+    private static async Task CreateMealIndexesAsync(IMongoDbContext context)
+    {
+        IMongoCollection<Meal> meals = context.GetCollection<Meal>("meals");
+
+        // Primary query pattern: get all meals for a user on a specific date.
+        IndexKeysDefinition<Meal> userDateIndex = Builders<Meal>.IndexKeys
+            .Ascending(m => m.UserId)
+            .Ascending(m => m.Date);
+        CreateIndexModel<Meal> userDate = new(
+            userDateIndex,
+            new CreateIndexOptions { Name = "meals_userId_date" });
+
+        await meals.Indexes.CreateManyAsync([userDate]);
     }
 }
