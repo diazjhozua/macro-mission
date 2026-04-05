@@ -49,6 +49,12 @@ public sealed class UserRepository(IMongoDbContext context) : IUserRepository
         return await _users.Find(filter).AnyAsync(cancellationToken);
     }
 
+    public async Task<List<User>> GetByIdsAsync(List<ObjectId> ids, CancellationToken cancellationToken = default)
+    {
+        FilterDefinition<User> filter = Builders<User>.Filter.In(u => u.Id, ids);
+        return await _users.Find(filter).ToListAsync(cancellationToken);
+    }
+
     public async Task CreateAsync(User user, CancellationToken cancellationToken = default)
     {
         await _users.InsertOneAsync(user, cancellationToken: cancellationToken);

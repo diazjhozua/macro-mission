@@ -25,6 +25,13 @@ public sealed class FollowRepository(IMongoDbContext context) : IFollowRepositor
         return follows.Select(f => f.FollowingId).ToList();
     }
 
+    public async Task<List<ObjectId>> GetFollowerIdsAsync(ObjectId followingId, CancellationToken cancellationToken = default)
+    {
+        FilterDefinition<Follow> filter = Builders<Follow>.Filter.Eq(f => f.FollowingId, followingId);
+        List<Follow> follows = await _follows.Find(filter).ToListAsync(cancellationToken);
+        return follows.Select(f => f.FollowerId).ToList();
+    }
+
     public async Task<bool> IsFollowingAsync(ObjectId followerId, ObjectId followingId, CancellationToken cancellationToken = default)
     {
         FilterDefinition<Follow> filter = Builders<Follow>.Filter.And(
