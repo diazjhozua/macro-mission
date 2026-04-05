@@ -7,6 +7,7 @@ public interface IPostRepository
 {
     Task<Post?> GetByIdAsync(ObjectId id, CancellationToken cancellationToken = default);
     Task<List<Post>> GetFeedAsync(List<ObjectId> authorIds, int page, int pageSize, CancellationToken cancellationToken = default);
+    Task<List<Post>> GetPublicPostsAsync(int page, int pageSize, CancellationToken cancellationToken = default);
     Task<List<Post>> GetByAuthorAsync(ObjectId authorId, ObjectId? requesterId, int page, int pageSize, CancellationToken cancellationToken = default);
     Task CreateAsync(Post post, CancellationToken cancellationToken = default);
     Task UpdateAsync(Post post, CancellationToken cancellationToken = default);

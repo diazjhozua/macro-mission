@@ -16,6 +16,17 @@ public sealed class PostRepository(IMongoDbContext context) : IPostRepository
         return await _posts.Find(filter).FirstOrDefaultAsync(cancellationToken);
     }
 
+    public async Task<List<Post>> GetPublicPostsAsync(int page, int pageSize, CancellationToken cancellationToken = default)
+    {
+        FilterDefinition<Post> filter = Builders<Post>.Filter.Eq(p => p.Visibility, PostVisibility.Public);
+
+        return await _posts.Find(filter)
+            .SortByDescending(p => p.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Limit(pageSize)
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<List<Post>> GetFeedAsync(List<ObjectId> authorIds, int page, int pageSize, CancellationToken cancellationToken = default)
     {
         // Feed shows public + followersOnly posts from followed users, sorted newest first.
