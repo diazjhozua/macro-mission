@@ -1,3 +1,4 @@
+using MacroMission.Api.Extensions;
 using MacroMission.Api.Infrastructure;
 using MacroMission.Application.Auth.Commands.RefreshToken;
 using MacroMission.Application.Auth.Results;
@@ -29,6 +30,8 @@ internal sealed class RefreshToken : IEndpoint
         .WithTags(Tags.Auth)
         .WithSummary("Exchange a valid refresh token for a new access token and rotated refresh token.")
         .Produces<AuthResponse>(StatusCodes.Status200OK)
-        .Produces(StatusCodes.Status401Unauthorized);
+        .Produces(StatusCodes.Status401Unauthorized)
+        .Produces(StatusCodes.Status429TooManyRequests)
+        .RequireRateLimiting(RateLimiterExtensions.AuthPolicy);
     }
 }

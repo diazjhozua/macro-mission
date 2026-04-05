@@ -1,3 +1,4 @@
+using MacroMission.Api.Extensions;
 using MacroMission.Api.Infrastructure;
 using MacroMission.Application.Auth.Commands.Register;
 using MacroMission.Application.Common.Messaging;
@@ -32,6 +33,8 @@ internal sealed class Register : IEndpoint
         .WithSummary("Register a new account. A verification email will be sent.")
         .Produces(StatusCodes.Status200OK)
         .Produces(StatusCodes.Status409Conflict)
-        .Produces(StatusCodes.Status400BadRequest);
+        .Produces(StatusCodes.Status400BadRequest)
+        .Produces(StatusCodes.Status429TooManyRequests)
+        .RequireRateLimiting(RateLimiterExtensions.AuthPolicy);
     }
 }

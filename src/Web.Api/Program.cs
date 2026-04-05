@@ -17,6 +17,7 @@ WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddEndpoints(Assembly.GetExecutingAssembly());
+builder.Services.AddRateLimiting();
 
 // JWT auth — reads settings directly here so the middleware has them before DI resolves.
 JwtSettings jwtSettings = builder.Configuration
@@ -67,6 +68,7 @@ if (app.Environment.IsDevelopment())
     app.MapScalarApiReference(options => options.Title = "Macro Mission");
 }
 
+app.UseRateLimiter();
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();

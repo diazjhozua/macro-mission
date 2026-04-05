@@ -1,3 +1,4 @@
+using MacroMission.Api.Extensions;
 using MacroMission.Api.Infrastructure;
 using MacroMission.Application.Auth.Commands.Login;
 using MacroMission.Application.Auth.Results;
@@ -30,6 +31,8 @@ internal sealed class Login : IEndpoint
         .WithSummary("Login and receive an access token and refresh token.")
         .Produces<AuthResponse>(StatusCodes.Status200OK)
         .Produces(StatusCodes.Status401Unauthorized)
-        .Produces(StatusCodes.Status400BadRequest);
+        .Produces(StatusCodes.Status400BadRequest)
+        .Produces(StatusCodes.Status429TooManyRequests)
+        .RequireRateLimiting(RateLimiterExtensions.AuthPolicy);
     }
 }
