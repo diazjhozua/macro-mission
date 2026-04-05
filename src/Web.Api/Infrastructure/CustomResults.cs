@@ -1,14 +1,11 @@
 using MacroMission.Domain.Common;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.ModelBinding;
 
-namespace MacroMission.Api.Controllers;
+namespace MacroMission.Api.Infrastructure;
 
-[ApiController]
-[Route("api/v1/[controller]")]
-public abstract class ApiController : ControllerBase
+internal static class CustomResults
 {
-    protected IActionResult Problem(Error error)
+    internal static IResult Problem(Error error)
     {
         if (error is ValidationError validationError)
             return ValidationProblem(validationError);
@@ -23,15 +20,15 @@ public abstract class ApiController : ControllerBase
             _ => StatusCodes.Status500InternalServerError
         };
 
-        return Problem(statusCode: statusCode, title: error.Description);
+        return Results.Problem(statusCode: statusCode, title: error.Description);
     }
 
-    private IActionResult ValidationProblem(ValidationError validationError)
+    private static IResult ValidationProblem(ValidationError validationError)
     {
-        ModelStateDictionary modelState = new();
-        foreach (Error error in validationError.Errors)
-            modelState.AddModelError(error.Code, error.Description);
+        Dictionary<string, string[]> errors = validationError.Errors
+            .GroupBy(e => e.Code)
+            .ToDictionary(g => g.Key, g => g.Select(e => e.Description).ToArray());
 
-        return ValidationProblem(modelState);
+        return Results.ValidationProblem(errors);
     }
 }

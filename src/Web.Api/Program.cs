@@ -1,4 +1,6 @@
+using System.Reflection;
 using System.Text;
+using MacroMission.Api.Extensions;
 using MacroMission.Api.Middleware;
 using MacroMission.Api.OpenApi;
 using MacroMission.Application.DependencyInjection;
@@ -13,6 +15,7 @@ WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddEndpoints(Assembly.GetExecutingAssembly());
 
 // JWT auth — reads settings directly here so the middleware has them before DI resolves.
 JwtSettings jwtSettings = builder.Configuration
@@ -39,8 +42,7 @@ builder.Services
         };
     });
 
-builder.Services.AddControllers();
-builder.Services.AddHealthChecks();
+builder.Services.AddAuthorization();
 
 builder.Services.AddOpenApi(options =>
 {
@@ -63,7 +65,6 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
-app.MapControllers();
-app.MapHealthChecks("/health");
+app.MapEndpoints();
 
 app.Run();
