@@ -41,6 +41,10 @@ public static class InfrastructureServiceExtensions
         services.AddScoped<IDailyGoalRepository, DailyGoalRepository>();
         services.AddScoped<IFoodRepository, FoodRepository>();
         services.AddScoped<IMealRepository, MealRepository>();
+        services.AddScoped<IFollowRepository, FollowRepository>();
+        services.AddScoped<IPostRepository, PostRepository>();
+        services.AddScoped<ILikeRepository, LikeRepository>();
+        services.AddScoped<ICommentRepository, CommentRepository>();
     }
 
     private static void AddAuth(IServiceCollection services, IConfiguration configuration)

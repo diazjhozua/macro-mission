@@ -2,6 +2,7 @@ using MacroMission.Application.Common.Interfaces;
 using MacroMission.Domain.DailyGoals;
 using MacroMission.Domain.Foods;
 using MacroMission.Domain.Meals;
+using MacroMission.Domain.Social;
 using MacroMission.Domain.Users;
 using MongoDB.Driver;
 
@@ -19,6 +20,7 @@ public static class MongoIndexInitializer
         await CreateDailyGoalIndexesAsync(context);
         await CreateFoodIndexesAsync(context);
         await CreateMealIndexesAsync(context);
+        await CreateSocialIndexesAsync(context);
     }
 
     private static async Task CreateUserIndexesAsync(IMongoDbContext context)
@@ -91,5 +93,42 @@ public static class MongoIndexInitializer
             new CreateIndexOptions { Name = "meals_userId_date" });
 
         await meals.Indexes.CreateManyAsync([userDate]);
+    }
+
+    private static async Task CreateSocialIndexesAsync(IMongoDbContext context)
+    {
+        // follows — unique compound prevents duplicate follows.
+        IMongoCollection<Follow> follows = context.GetCollection<Follow>("follows");
+        CreateIndexModel<Follow> followerFollowing = new(
+            Builders<Follow>.IndexKeys.Ascending(f => f.FollowerId).Ascending(f => f.FollowingId),
+            new CreateIndexOptions { Unique = true, Name = "follows_followerId_followingId" });
+        CreateIndexModel<Follow> followingId = new(
+            Builders<Follow>.IndexKeys.Ascending(f => f.FollowingId),
+            new CreateIndexOptions { Name = "follows_followingId" });
+        await follows.Indexes.CreateManyAsync([followerFollowing, followingId]);
+
+        // posts — feed queries filter by authorId and sort by createdAt.
+        IMongoCollection<Post> posts = context.GetCollection<Post>("posts");
+        CreateIndexModel<Post> authorCreatedAt = new(
+            Builders<Post>.IndexKeys.Ascending(p => p.AuthorId).Descending(p => p.CreatedAt),
+            new CreateIndexOptions { Name = "posts_authorId_createdAt" });
+        CreateIndexModel<Post> createdAt = new(
+            Builders<Post>.IndexKeys.Descending(p => p.CreatedAt),
+            new CreateIndexOptions { Name = "posts_createdAt" });
+        await posts.Indexes.CreateManyAsync([authorCreatedAt, createdAt]);
+
+        // likes — unique compound prevents duplicate likes.
+        IMongoCollection<Like> likes = context.GetCollection<Like>("likes");
+        CreateIndexModel<Like> userPost = new(
+            Builders<Like>.IndexKeys.Ascending(l => l.UserId).Ascending(l => l.PostId),
+            new CreateIndexOptions { Unique = true, Name = "likes_userId_postId" });
+        await likes.Indexes.CreateManyAsync([userPost]);
+
+        // comments — load comments for a post sorted by createdAt.
+        IMongoCollection<Comment> comments = context.GetCollection<Comment>("comments");
+        CreateIndexModel<Comment> postCreatedAt = new(
+            Builders<Comment>.IndexKeys.Ascending(c => c.PostId).Ascending(c => c.CreatedAt),
+            new CreateIndexOptions { Name = "comments_postId_createdAt" });
+        await comments.Indexes.CreateManyAsync([postCreatedAt]);
     }
 }
