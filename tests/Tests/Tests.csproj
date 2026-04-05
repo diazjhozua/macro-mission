@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
-    <RootNamespace>macro_mission.tests</RootNamespace>
+    <RootNamespace>MacroMission.Tests</RootNamespace>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
@@ -22,9 +22,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\macro-mission.domain\macro-mission.domain.csproj" />
-    <ProjectReference Include="..\..\src\macro-mission.application\macro-mission.application.csproj" />
-    <ProjectReference Include="..\..\src\macro-mission.infrastructure\macro-mission.infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\Domain\Domain.csproj" />
+    <ProjectReference Include="..\..\src\Application\Application.csproj" />
+    <ProjectReference Include="..\..\src\Infrastructure\Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

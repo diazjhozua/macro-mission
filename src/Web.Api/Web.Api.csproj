@@ -4,7 +4,7 @@
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <RootNamespace>macro_mission.api</RootNamespace>
+    <RootNamespace>MacroMission.Api</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
@@ -14,9 +14,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\macro-mission.application\macro-mission.application.csproj" />
-    <ProjectReference Include="..\macro-mission.infrastructure\macro-mission.infrastructure.csproj" />
-    <ProjectReference Include="..\macro-mission.contracts\macro-mission.contracts.csproj" />
+    <ProjectReference Include="..\Application\Application.csproj" />
+    <ProjectReference Include="..\Infrastructure\Infrastructure.csproj" />
+    <ProjectReference Include="..\Contracts\Contracts.csproj" />
   </ItemGroup>
 
 </Project>

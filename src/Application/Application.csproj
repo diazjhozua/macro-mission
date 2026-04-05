@@ -1,8 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
-    <ProjectReference Include="..\macro-mission.domain\macro-mission.domain.csproj" />
-    <ProjectReference Include="..\macro-mission.contracts\macro-mission.contracts.csproj" />
+    <ProjectReference Include="..\Domain\Domain.csproj" />
+    <ProjectReference Include="..\Contracts\Contracts.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -15,14 +15,14 @@
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
-    <RootNamespace>macro_mission.application</RootNamespace>
+    <RootNamespace>MacroMission.Application</RootNamespace>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <ItemGroup>
     <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
-      <_Parameter1>macro-mission.tests</_Parameter1>
+      <_Parameter1>Tests</_Parameter1>
     </AssemblyAttribute>
   </ItemGroup>
 
