@@ -1,5 +1,6 @@
 using System.Reflection;
 using System.Text;
+using System.Text.Json.Serialization;
 using MacroMission.Api.Extensions;
 using MacroMission.Api.Middleware;
 using MacroMission.Api.OpenApi;
@@ -43,6 +44,10 @@ builder.Services
     });
 
 builder.Services.AddAuthorization();
+
+// Serialize enums as strings globally so responses return "Breakfast" instead of 0.
+builder.Services.ConfigureHttpJsonOptions(options =>
+    options.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 
 builder.Services.AddOpenApi(options =>
 {
