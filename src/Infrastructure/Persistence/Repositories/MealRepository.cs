@@ -35,6 +35,12 @@ public sealed class MealRepository(IMongoDbContext context) : IMealRepository
         await _meals.InsertOneAsync(meal, cancellationToken: cancellationToken);
     }
 
+    public async Task UpdateAsync(Meal meal, CancellationToken cancellationToken = default)
+    {
+        FilterDefinition<Meal> filter = Builders<Meal>.Filter.Eq(m => m.Id, meal.Id);
+        await _meals.ReplaceOneAsync(filter, meal, cancellationToken: cancellationToken);
+    }
+
     public async Task DeleteAsync(ObjectId id, CancellationToken cancellationToken = default)
     {
         FilterDefinition<Meal> filter = Builders<Meal>.Filter.Eq(m => m.Id, id);
