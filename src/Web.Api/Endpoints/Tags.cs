@@ -6,5 +6,6 @@ internal static class Tags
     internal const string DailyGoals = "Daily Goals";
     internal const string Foods = "Foods";
     internal const string Meals = "Meals";
+    internal const string Social = "Social";
     internal const string Health = "Health";
 }
