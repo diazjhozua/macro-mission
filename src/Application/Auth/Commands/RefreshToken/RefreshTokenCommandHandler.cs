@@ -23,8 +23,22 @@ internal sealed class RefreshTokenCommandHandler(
         Domain.Users.RefreshToken? existingToken = user.RefreshTokens
             .FirstOrDefault(t => t.Token == hashedToken);
 
-        if (existingToken is null || !existingToken.IsActive)
-            return Result<AuthResult>.Failure(Error.Unauthorized("Auth.InvalidToken", "Refresh token is expired or revoked."));
+        if (existingToken is null)
+            return Result<AuthResult>.Failure(Error.Unauthorized("Auth.InvalidToken", "Refresh token is invalid."));
+
+        // Reuse detection: token exists in the DB but was already rotated.
+        // This means a previously-issued token is being replayed — likely theft.
+        // Revoke every active session to force re-login on all devices.
+        if (existingToken.RevokedAt is not null)
+        {
+            user.RevokeAllRefreshTokens();
+            await userRepository.UpdateAsync(user, cancellationToken);
+            return Result<AuthResult>.Failure(
+                Error.Unauthorized("Auth.TokenReuse", "Suspicious activity detected. All sessions have been revoked."));
+        }
+
+        if (existingToken.IsExpired)
+            return Result<AuthResult>.Failure(Error.Unauthorized("Auth.TokenExpired", "Refresh token has expired. Please log in again."));
 
         // Rotate: revoke the used token and issue a new one.
         existingToken.RevokedAt = DateTime.UtcNow;

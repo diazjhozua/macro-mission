@@ -24,9 +24,20 @@ public sealed class User : Entity
             token.RevokedAt = DateTime.UtcNow;
     }
 
+    /// <summary>
+    /// Revokes every active token. Called when token reuse is detected to force
+    /// re-login on all devices.
+    /// </summary>
+    public void RevokeAllRefreshTokens()
+    {
+        foreach (RefreshToken token in RefreshTokens.Where(t => t.IsActive))
+            token.RevokedAt = DateTime.UtcNow;
+    }
+
     public void RemoveExpiredTokens()
     {
-        // Prune stale tokens periodically to keep the document size in check.
-        RefreshTokens.RemoveAll(t => !t.IsActive);
+        // Only prune tokens past their expiry date. Revoked-but-not-yet-expired
+        // tokens are kept so replay attacks can be detected.
+        RefreshTokens.RemoveAll(t => t.IsExpired);
     }
 }
