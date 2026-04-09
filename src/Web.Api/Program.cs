@@ -18,6 +18,7 @@ builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddEndpoints(Assembly.GetExecutingAssembly());
 builder.Services.AddRateLimiting();
+builder.Services.AddCorsPolicy(builder.Configuration);
 
 // JWT auth — reads settings directly here so the middleware has them before DI resolves.
 JwtSettings jwtSettings = builder.Configuration
@@ -69,6 +70,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseRateLimiter();
+app.UseCors(CorsExtensions.PolicyName);
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
