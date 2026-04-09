@@ -62,11 +62,16 @@ WebApplication app = builder.Build();
 await InfrastructureServiceExtensions.InitializeDatabaseAsync(app.Services);
 
 app.UseMiddleware<ExceptionHandlingMiddleware>();
+app.UseMiddleware<SecurityHeadersMiddleware>();
 
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
     app.MapScalarApiReference(options => options.Title = "Macro Mission");
+}
+else
+{
+    app.UseHsts();
 }
 
 app.UseRateLimiter();
