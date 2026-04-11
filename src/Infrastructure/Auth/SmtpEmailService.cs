@@ -48,11 +48,17 @@ public sealed class SmtpEmailService(SmtpSettings settings) : IEmailService
         return $"{testPrefix}{appPrefix} {subject}";
     }
 
-    private static string BuildVerificationBody(string token) =>
-        $"""
+    private string BuildVerificationBody(string token)
+    {
+        string link = $"{settings.FrontendUrl}/verify-email?token={token}";
+
+        return $"""
         <h2>Welcome to MacroMission!</h2>
-        <p>Use the token below to verify your email address:</p>
-        <p><strong>{token}</strong></p>
-        <p>This token expires in 24 hours.</p>
+        <p>Click the button below to verify your email address:</p>
+        <p><a href="{link}" style="display:inline-block;padding:12px 24px;background:#18181b;color:#fff;text-decoration:none;border-radius:6px;font-weight:600;">Verify email</a></p>
+        <p>Or copy this link into your browser:</p>
+        <p>{link}</p>
+        <p>This link expires in 24 hours.</p>
         """;
+    }
 }

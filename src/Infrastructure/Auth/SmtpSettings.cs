@@ -11,6 +11,9 @@ public sealed class SmtpSettings
     public string FromEmail { get; init; } = string.Empty;
     public string AppName { get; init; } = string.Empty;
 
+    // Base URL of the frontend app — used to build clickable links in emails.
+    public string FrontendUrl { get; init; } = string.Empty;
+
     // Prepends "[TEST]" to all email subjects when not in production.
     public bool IsProduction { get; init; }
 }
