@@ -1,7 +1,6 @@
 import axios, { AxiosError, type InternalAxiosRequestConfig } from "axios";
 import { ApiError, type ProblemDetails, type ValidationProblemDetails } from "@/lib/types/api";
 import { type AuthResponse } from "@/lib/types/auth";
-// authStore doesn't import from this file so there's no circular dependency.
 import { useAuthStore } from "@/lib/stores/authStore";
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL;
@@ -10,6 +9,36 @@ export const apiClient = axios.create({
   baseURL: BASE_URL,
   headers: { "Content-Type": "application/json" },
 });
+
+// ─── Shared refresh ───────────────────────────────────────────────────────────
+
+// A single in-flight promise shared across ALL callers (AuthProvider, the
+// Axios interceptor, etc.). If two things try to refresh at the same time —
+// e.g. AuthProvider on page load AND a 401 from a query that fired before
+// the token was ready — only one fetch goes out. Both callers await the same
+// result, so the backend never sees the rotated token replayed.
+let refreshPromise: Promise<string> | null = null;
+
+export async function refreshAccessToken(): Promise<string> {
+  if (refreshPromise) return refreshPromise;
+
+  refreshPromise = (async () => {
+    const res = await fetch("/api/auth/refresh", { method: "POST" });
+
+    if (!res.ok) {
+      throw new Error("Refresh failed");
+    }
+
+    const data: AuthResponse = await res.json();
+    useAuthStore.getState().setTokens(data.accessToken, data.accessTokenExpiresAt);
+    return data.accessToken;
+  })().finally(() => {
+    // Always clear the promise so the next refresh attempt can start fresh.
+    refreshPromise = null;
+  });
+
+  return refreshPromise;
+}
 
 // ─── Token injection ──────────────────────────────────────────────────────────
 
@@ -25,20 +54,6 @@ apiClient.interceptors.request.use((config) => {
 
 // ─── Silent refresh ───────────────────────────────────────────────────────────
 
-// When multiple concurrent requests all 401 at once (e.g. token expired
-// mid-session), only one refresh call should fire. The rest queue here and
-// resolve once the single refresh completes.
-let isRefreshing = false;
-let queue: Array<{
-  resolve: (token: string) => void;
-  reject: (err: unknown) => void;
-}> = [];
-
-function processQueue(err: unknown, token: string | null) {
-  queue.forEach((p) => (err ? p.reject(err) : p.resolve(token!)));
-  queue = [];
-}
-
 apiClient.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
@@ -49,40 +64,13 @@ apiClient.interceptors.response.use(
       return Promise.reject(toApiError(error));
     }
 
-    if (isRefreshing) {
-      return new Promise((resolve, reject) => {
-        queue.push({
-          resolve: (token) => {
-            original.headers.Authorization = `Bearer ${token}`;
-            resolve(apiClient(original));
-          },
-          reject,
-        });
-      });
-    }
-
     original._retry = true;
-    isRefreshing = true;
 
     try {
-      // Use fetch instead of axios so the httpOnly cookie is sent reliably.
-      // Axios has known quirks with cookies on same-origin requests in some
-      // Next.js/webpack builds; fetch handles it correctly every time.
-      const res = await fetch("/api/auth/refresh", { method: "POST" });
-
-      if (!res.ok) {
-        throw new Error("Refresh failed");
-      }
-
-      const data: AuthResponse = await res.json();
-      useAuthStore.getState().setTokens(data.accessToken, data.accessTokenExpiresAt);
-
-      processQueue(null, data.accessToken);
-      original.headers.Authorization = `Bearer ${data.accessToken}`;
+      const token = await refreshAccessToken();
+      original.headers.Authorization = `Bearer ${token}`;
       return apiClient(original);
     } catch (refreshError) {
-      processQueue(refreshError, null);
-
       useAuthStore.getState().clear();
 
       if (typeof window !== "undefined") {
@@ -90,8 +78,6 @@ apiClient.interceptors.response.use(
       }
 
       return Promise.reject(toApiError(refreshError as AxiosError));
-    } finally {
-      isRefreshing = false;
     }
   },
 );
