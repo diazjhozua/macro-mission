@@ -23,9 +23,9 @@ export async function POST(request: NextRequest) {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
-    // Scoped to only the refresh endpoint — the browser won't send this
-    // cookie on any other request, reducing the CSRF surface area.
-    path: "/api/auth/refresh",
+    // path "/" so the middleware can check for it on every navigation.
+    // sameSite: "lax" + httpOnly is sufficient CSRF protection.
+    path: "/",
     maxAge: 60 * 60 * 24 * 7, // 7 days — matches the backend token TTL
   });
 
