@@ -36,9 +36,14 @@ public sealed class JwtTokenService(JwtSettings settings) : ITokenService
 
     public string GenerateRefreshToken()
     {
-        // 64 bytes of cryptographic randomness — collision-resistant and URL-safe after Base64.
         byte[] bytes = RandomNumberGenerator.GetBytes(64);
-        return Convert.ToBase64String(bytes);
+        // URL-safe Base64 avoids encoding issues when the token is stored in
+        // cookies. Standard Base64 uses '+' and '/' which some cookie parsers
+        // percent-encode, causing the hash to not match on the next request.
+        return Convert.ToBase64String(bytes)
+            .Replace('+', '-')
+            .Replace('/', '_')
+            .TrimEnd('=');
     }
 
     public string HashRefreshToken(string rawToken)
