@@ -26,7 +26,11 @@ export async function refreshAccessToken(): Promise<string> {
     const res = await fetch("/api/auth/refresh", { method: "POST" });
 
     if (!res.ok) {
-      throw new Error("Refresh failed");
+      // Tag the error with the status so the interceptor can decide whether
+      // to redirect to login (401) or just surface the error (429, 500, etc.)
+      const err = new Error("Refresh failed") as Error & { status: number };
+      err.status = res.status;
+      throw err;
     }
 
     const data: AuthResponse = await res.json();
@@ -71,10 +75,16 @@ apiClient.interceptors.response.use(
       original.headers.Authorization = `Bearer ${token}`;
       return apiClient(original);
     } catch (refreshError) {
-      useAuthStore.getState().clear();
+      const status = (refreshError as { status?: number }).status;
 
-      if (typeof window !== "undefined") {
-        window.location.href = "/login";
+      // Only force a logout on a genuine auth failure. A rate limit (429) or
+      // server error (500) is transient — the user still has a valid session.
+      if (status === 401 || status === undefined) {
+        useAuthStore.getState().clear();
+
+        if (typeof window !== "undefined") {
+          window.location.href = "/login";
+        }
       }
 
       return Promise.reject(toApiError(refreshError as AxiosError));

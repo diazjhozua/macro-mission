@@ -1,16 +1,18 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { MacroProgressCard } from "@/components/dashboard/MacroProgressCard";
 import { MealCard } from "@/components/dashboard/MealCard";
+import { MealLogDialog } from "@/components/meals/MealLogDialog";
 import { useDailySummary } from "@/lib/hooks/useMeals";
 import { addDays, formatDisplayDate, isSameDay, toApiDate } from "@/lib/utils/date";
 import { MACRO_KEYS } from "@/lib/utils/macros";
 
 export default function DashboardPage() {
   const [date, setDate] = useState(() => new Date());
+  const [dialogOpen, setDialogOpen] = useState(false);
   const dateStr = toApiDate(date);
   const isToday = isSameDay(date, new Date());
 
@@ -27,6 +29,11 @@ export default function DashboardPage() {
             <p className="text-sm text-muted-foreground">{formatDisplayDate(date)}</p>
           )}
         </div>
+        <div className="flex items-center gap-2">
+          <Button size="sm" onClick={() => setDialogOpen(true)} className="gap-1.5">
+            <Plus className="h-4 w-4" />
+            Log meal
+          </Button>
         <div className="flex items-center gap-1">
           <Button
             variant="ghost"
@@ -53,6 +60,7 @@ export default function DashboardPage() {
           >
             <ChevronRight className="h-4 w-4" />
           </Button>
+        </div>
         </div>
       </div>
 
@@ -92,6 +100,12 @@ export default function DashboardPage() {
           <MealCard key={meal.id} meal={meal} />
         ))}
       </div>
+
+      <MealLogDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        date={dateStr}
+      />
     </div>
   );
 }
