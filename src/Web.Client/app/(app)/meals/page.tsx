@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronLeft, ChevronRight, Pencil, Plus, Trash2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Pencil, Plus, Share2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { MealLogDialog } from "@/components/meals/MealLogDialog";
+import { CreatePostDialog } from "@/components/social/CreatePostDialog";
 import { useMealsByDate, useDeleteMeal } from "@/lib/hooks/useMeals";
 import { type MealResult } from "@/lib/types/meal";
 import { addDays, formatDisplayDate, isSameDay, toApiDate } from "@/lib/utils/date";
@@ -22,6 +23,7 @@ export default function MealsPage() {
   const [date, setDate] = useState(() => new Date());
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingMeal, setEditingMeal] = useState<MealResult | undefined>();
+  const [sharingMeal, setSharingMeal] = useState<MealResult | undefined>();
 
   const dateStr = toApiDate(date);
   const isToday = isSameDay(date, new Date());
@@ -119,6 +121,14 @@ export default function MealsPage() {
                   <Button
                     variant="ghost"
                     size="icon"
+                    className="h-7 w-7 text-muted-foreground"
+                    onClick={() => setSharingMeal(meal)}
+                  >
+                    <Share2 className="h-3.5 w-3.5" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
                     className="h-7 w-7 text-muted-foreground hover:text-destructive"
                     onClick={() => handleDelete(meal)}
                   >
@@ -148,6 +158,14 @@ export default function MealsPage() {
           </Card>
         ))}
       </div>
+
+      {sharingMeal && (
+        <CreatePostDialog
+          open={!!sharingMeal}
+          onOpenChange={(open) => { if (!open) setSharingMeal(undefined); }}
+          meal={sharingMeal}
+        />
+      )}
 
       <MealLogDialog
         open={dialogOpen}
